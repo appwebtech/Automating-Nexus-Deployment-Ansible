@@ -1,0 +1,1 @@
+178.62.13.23 ansible_ssh_private_key_file=~/.ssh/droplet ansible_user=root
