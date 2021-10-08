@@ -1,4 +1,12 @@
-# Automating Nexus Deployment with Ansible
+<center> <h1>Automating Nexus Deployment with Ansible</h1> </center>
+
+
+<p float="left">
+  <img src="" width="100">
+  <img src="https://github.com/appwebtech/Ansible-Automation-App-Deployment/blob/main/images/Ansible-logo.png" width="100">
+</p>
+
+----
 
 ## Introduction
 
