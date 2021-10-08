@@ -62,5 +62,12 @@
         group: nexus
         recurse: yes
 
-
+- name: Start nexus with nexus user
+  hosts: 178.62.13.23
+  tasks:
+    - name: Set run_as_user nexus
+      lineinfile:
+        path: /opt/nexus/bin/nexus.rc
+        regex: '^#run_as_user=""'
+        line: run_as_user="nexus"
           
