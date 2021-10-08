@@ -64,10 +64,14 @@
 
 - name: Start nexus with nexus user
   hosts: 178.62.13.23
+  become: True
+  become_user: nexus
   tasks:
     - name: Set run_as_user nexus
       lineinfile:
         path: /opt/nexus/bin/nexus.rc
         regex: '^#run_as_user=""'
         line: run_as_user="nexus"
+    - name: Start nexus
+      command: /opt/nexus/bin/nexus start
           
