@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Instead of creating a cloud server and SSH'ing into it to download Nexus binaries, unpack and eventually run Nexus, I will be automating this processes with Ansible.
+Instead of creating a cloud server, SSH'ing into it to download Nexus binaries, unpack and eventually run Nexus, I will be automating this processes with Ansible.
 
 ## Installation
 
@@ -74,6 +74,7 @@ Because there are multiple versions of binaries to download and you never know w
 #        dest: /opt/
 #        remote_src: yes
 ```
+
 ![metadata](./images/image-3.png)
 
 It's always good to know what you are installing, especially versions as they usually come in handy. Next I'll run the installation again without the debugger and see what is happening. Below is the second play.
@@ -131,3 +132,125 @@ It's possible to configure the playbook in a way that instead of throwing an err
 ```
 
 ![skipping](./images/image-8.png)
+
+## Create Nexus User
+
+Since **sonatype-work** and **nexus** are owned by root, I'll create a nexus user, add the user to a group and create ownership of those two folders to the user. Here go the play.
+The first part of the play (*Create nexus user to own nexus folders*) is equivalent to the linux command;
+
+```shell
+chown -R nexus:nexus nexus-3.28.1-01
+```
+
+The second part of the play (*Make nexus user owner of nexus folder*) is equivalent to;
+
+```shell
+chown -R nexus:nexus sonatype-work
+```
+
+```yaml
+- name: Create nexus user to own nexus folders
+  hosts: 178.62.13.23
+  tasks:
+    - name: Ensure group nexus exists
+      group:
+        name: nexus
+        state: present
+    - name: Create nexus user
+      user:
+        name: nexus
+        group: nexus
+    - name:  Make nexus user owner of nexus folder
+      file:
+        path: /opt/nexus
+        state: directory
+        owner: nexus
+        group: nexus
+        recurse: yes
+    - name: Make nexus user owner of sonatype-work folder
+      file:
+        path: /opt/sonatype-work
+        state: directory
+        owner: nexus
+        group: nexus
+        recurse: yes
+```
+
+![ownership-1](./images/image-9.png)
+
+## Starting Nexus with Nexus User
+
+Normally in order to allow the created **nexus** user to start nexus, we usually edit the **nexus.rc** file as follows;
+
+```shell
+vim nexus-3.28.1-01/bin/nexus.rc
+run_as_user="nexus"
+```
+
+With ansible, I'll create another playbook as follows to add the line **run_as_user="nexus"** in the empty file;
+
+```yaml
+- name: Start nexus with nexus user
+  hosts: 178.62.13.23
+  become: True
+  become_user: nexus
+  tasks:
+    - name: Set run_as_user nexus
+      lineinfile:
+        path: /opt/nexus/bin/nexus.rc
+        regex: '^#run_as_user=""'
+        line: run_as_user="nexus"
+    - name: Start nexus
+      command: /opt/nexus/bin/nexus start
+```
+
+![ownership-2](./images/image-10.png)
+
+Server started successfully.
+
+![server](./images/image-11.png)
+
+Instead of SSH'ing in the server to check if things are working, we can use our friend the debugger and get an output in the console. Actually, I'll add a play just for that. 
+
+```yaml
+- name: Debugger for verification
+  hosts: 178.62.13.23
+  tasks:
+    - name: Check with ps
+      shell: ps aux | grep nexus
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+    - name: Check with netstat
+      shell: netstat -plnt
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+```
+
+After running the playbook, we can see nexus process is running (ps 55461) and below there is java listening at port 35805. We don't see the port (8081) where nexus is running though because it takes a while for the mapping to be complete or you can configure the play with a *wait condition* module called **wait_for** or **pause** to avoid that. If I run netstat on the server it will actually show it.
+
+![server](./images/image-12.png)
+
+</hr>
+
+![browser](./images/image-13.png)
+
+
+Pause condition can be implemented as below;
+
+```yaml
+- name: Debugger for verification
+  hosts: 178.62.13.23
+  tasks:
+    - name: Check with ps
+      shell: ps aux | grep nexus
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+    - name: Wait one minute
+      pause: 
+        minutes: 1
+    - name: Check with netstat
+      shell: netstat -plnt
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+```
+
