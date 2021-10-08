@@ -75,3 +75,20 @@
     - name: Start nexus
       command: /opt/nexus/bin/nexus start
           
+
+- name: Debugger for verification
+  hosts: 178.62.13.23
+  tasks:
+    - name: Check with ps
+      shell: ps aux | grep nexus
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+    - name: Wait one minute
+      pause: 
+        minutes: 1
+    - name: Check with netstat
+      shell: netstat -plnt
+      register: app_status
+    - debug: msg={{app_status.stdout_lines}}
+
+
