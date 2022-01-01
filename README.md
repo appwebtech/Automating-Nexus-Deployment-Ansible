@@ -2,7 +2,7 @@
 
 
 <p float="left">
-  <img src="" width="100">
+  <img src="https://github.com/appwebtech/Automating-Nexus-Deployment-Ansible/blob/main/images/nexus-logo.png" width="130">
   <img src="https://github.com/appwebtech/Ansible-Automation-App-Deployment/blob/main/images/Ansible-logo.png" width="100">
 </p>
 
